@@ -48,37 +48,58 @@ func processGameMessage(message GameMessage) {
       return
     }
 
-    <- obj.lock
-    
-    log.Printf("Updating obj, speed: %v, bearing: %v\n", speed, move.Bearing)
-    oX, oY := obj.X, obj.Y // Store originals
+    go func() {
+      var accel = [6]float64{0.2,0.3,0.5,0.8,0.7,0.2}
 
-    obj.X += speed * math.Cos(move.Bearing)
-    obj.Y += speed * math.Sin(move.Bearing)
-    obj.Bearing = move.Bearing
-    obj.lock <- 1 // Since collision detection could be slow, we'll release the lock as that runs
-
-    collisions := obj.collisions(game, obj)
-
-    for _, v := range collisions {
-      switch (v.ObjType) {
-      case "Player":
+      for i := 0; i < len(accel); i++ { // Add multiple movements here
         <- obj.lock
-        obj.X, obj.Y = oX, oY // Restore originals
-        obj.lock <- 1
-      case "Projectile":
-        // He's dead, jim.
-        obj.Respawn()
+        
+        // log.Printf("Updating obj, speed: %v, bearing: %v\n", speed, move.Bearing)
+        oX, oY := obj.X, obj.Y // Store originals
+
+        switch (move.Direction) {
+        case "toward":
+          obj.X += speed * math.Cos(move.Bearing) * accel[i]
+          obj.Y += speed * math.Sin(move.Bearing) * accel[i]
+        case "away":
+          obj.X -= speed * math.Cos(move.Bearing) * accel[i]
+          obj.Y -= speed * math.Sin(move.Bearing) * accel[i]
+        case "strafe-right":
+          obj.X += speed * math.Sin(move.Bearing) * accel[i]
+          obj.Y += speed * math.Cos(move.Bearing) * accel[i]
+        case "strafe-left":
+          obj.X -= speed * math.Sin(move.Bearing) * accel[i]
+          obj.Y -= speed * math.Cos(move.Bearing) * accel[i]
+        }
+        
+        obj.Bearing = move.Bearing
+        obj.lock <- 1 // Since collision detection could be slow, we'll release the lock as that runs
+
+        collisions := obj.collisions(game, obj)
+
+        for _, v := range collisions {
+          switch (v.ObjType) {
+          case "Player":
+            <- obj.lock
+            obj.X, obj.Y = oX, oY // Restore originals
+            obj.lock <- 1
+          case "Projectile":
+            // He's dead, jim.
+            obj.Respawn()
+          }
+        }
+        
+        game.update <- obj
+
+        time.Sleep(30*time.Millisecond)
       }
-    }
-    
-    game.update <- obj
+    }()
   case "fire":
     var fire FireMessage
     
     err := json.Unmarshal([]byte(message.Payload), &fire)
     if err != nil {
-      log.Println("Filed to parse fire message:", err)
+      log.Println("Failed to parse fire message:", err)
       return
     }
 
@@ -90,7 +111,7 @@ func processGameMessage(message GameMessage) {
     qualities["color"] = (*player.Qualities)["color"]
 
     characteristics := make(map[string]float64)
-    characteristics["speed"] = 5.0
+    characteristics["speed"] = 10.0
     characteristics["width"] = 1.0
 
     obj := game.NewObject(player.Id, player.X, player.Y, fire.Bearing, "Projectile", &qualities, &characteristics)
@@ -98,7 +119,7 @@ func processGameMessage(message GameMessage) {
 
     // This will actually fire the Projectile
     go func() {
-      for i := 0; i < 50; i++ {
+      for i := 0; i < 100; i++ {
         <- obj.lock
         obj.X += (*obj.Characteristics)["speed"] * math.Cos(fire.Bearing)
         obj.Y += (*obj.Characteristics)["speed"] * math.Sin(fire.Bearing)

@@ -44,15 +44,15 @@ func (game *GameState) manageGameState() {
         h.broadcast <- *obj
         delete(game.objects, obj.Id)
       case obj := <- game.update:
-        log.Printf("Updated object: %#v", obj)
+        // log.Printf("Updated object: %#v", obj)
         game.objects[obj.Id] = obj
         h.broadcast <- *obj
     }
 
-    log.Printf("Game state: %v", game)
-    for k := range game.objects {
-      log.Printf("\tGame object: %v->%v", k, game.objects[k])
-    }
+    //log.Printf("Game state: %v", game)
+    //for k := range game.objects {
+    //  log.Printf("\tGame object: %v->%v", k, game.objects[k])
+    //}
   }
 }
 

@@ -224,6 +224,7 @@
           //clearScreen();
           drawObjects();
           drawMessages();
+          requestAnimationFrame(gameLoop);
         };
 
         // var player = addObject(new GameObject(20, 20)); // Load the initial game
@@ -280,7 +281,8 @@
           };
         };
 
-        setInterval(gameLoop, 200); // Game the game loop every so often
+        gameLoop();
+        //setInterval(gameLoop, 200); // Game the game loop every so often
         registerListeners(); // Give us controls  
       }
       

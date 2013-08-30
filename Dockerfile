@@ -5,7 +5,6 @@
 FROM centos
 MAINTAINER Geoffrey Hayes <hayesgm@gmail.com>
 
-RUN yum update -y
 RUN yum install git-core -y
 
 RUN git clone https://github.com/hayesgm/glime /srv

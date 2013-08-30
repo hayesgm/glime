@@ -146,6 +146,13 @@
 
       $self.attr(settings); // Adjust height and width
 
+      $(window).resize(function() {
+        $self.attr({
+          width: $(window).width(),
+          height: $(window).height()
+        });
+      });
+
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, settings.width, settings.height);
 
@@ -235,13 +242,18 @@
             // var player = GameState.objects[playerId];
             // printMessage('(tX: ' + targetX + ', tY: ' + targetY + "), (" + player.x + ', ' + player.y + '), ' + ( player.bearing(targetX, targetY) / Math.PI ) + 'PI');
           };
-          document.onmousedown = function() {
+          document.onmousedown = function(e) {
             if (playerId == null) { // We can't accept options until initialization of player
               return;
             }
 
             var bearing = GameState.objects[playerId].calculateBearing(targetX, targetY);
-            new GameMessage('fire', {bearing: bearing}).send(server)
+            if (e.shiftKey) {
+              new GameMessage('fire', {bearing: bearing, missiles: 10}).send(server)  
+            } else {
+              new GameMessage('fire', {bearing: bearing}).send(server)
+            }
+            
             // var player = GameState.objects[playerId];
             // dbg(['px', player.x, 'targetX', targetX, 'py', player.y, 'targetY', targetY]);
           };

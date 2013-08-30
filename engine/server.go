@@ -4,14 +4,30 @@ import (
   "io/ioutil"
   "path"
   "fmt"
+  "log"
   "net/http"
   "html/template"
+  "github.com/coreos/go-etcd/etcd"
 )
+
+var c = etcd.NewClient()
 
 func getHandler(assetsDir, filename string) func(w http.ResponseWriter, req *http.Request) {
   return func(w http.ResponseWriter, req *http.Request) {
     tmpl := template.Must(template.ParseFiles(path.Join(assetsDir,filename)))
-    tmpl.Execute(w, nil)
+
+    mirrorKeys, err := c.Get("mirrors/") // We're going to grab any server that registers itself as a mirror
+
+    if err != nil {
+      log.Println("Failed to reach etcd server:",err)
+      tmpl.Execute(w, nil) // Don't require mirrors
+    } else {
+      mirrors := make([]string,len(mirrorKeys))
+      for i, _ := range mirrorKeys {
+        mirrors[i] = fmt.Sprintf("http://%s", path.Base(mirrorKeys[i].Key))
+      }
+      tmpl.Execute(w, mirrors)
+    }
   }
 }
 

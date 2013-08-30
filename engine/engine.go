@@ -24,6 +24,7 @@ type MoveMessage struct {
 
 type FireMessage struct {
   Bearing float64
+  Missiles int
 }
 
 func processGameMessage(message GameMessage) {
@@ -105,44 +106,48 @@ func processGameMessage(message GameMessage) {
 
     player := game.objects[message.id]
 
-    log.Printf("Creating new projectile from (%v,%v)", player.X, player.Y)
+    for i := 0; i < fire.Missiles + 1; i += 1 {
+      log.Printf("Creating new projectile from (%v,%v)", player.X, player.Y)
 
-    qualities := make(map[string]string)
-    qualities["color"] = (*player.Qualities)["color"]
+      qualities := make(map[string]string)
+      qualities["color"] = (*player.Qualities)["color"]
 
-    characteristics := make(map[string]float64)
-    characteristics["speed"] = 10.0
-    characteristics["width"] = 1.0
+      characteristics := make(map[string]float64)
+      characteristics["speed"] = 10.0
+      characteristics["width"] = 1.0
 
-    obj := game.NewObject(player.Id, player.X, player.Y, fire.Bearing, "Projectile", &qualities, &characteristics)
-    game.add <- obj
+      obj := game.NewObject(player.Id, player.X, player.Y, fire.Bearing, "Projectile", &qualities, &characteristics)
+      game.add <- obj
 
-    // This will actually fire the Projectile
-    go func() {
-      for i := 0; i < 100; i++ {
-        <- obj.lock
-        obj.X += (*obj.Characteristics)["speed"] * math.Cos(fire.Bearing)
-        obj.Y += (*obj.Characteristics)["speed"] * math.Sin(fire.Bearing)
-        obj.Bearing = fire.Bearing
-        obj.lock <- 1
-        game.update <- obj
+      // This will actually fire the Projectile
+      go func() {
+        for i := 0; i < 100; i++ {
+          <- obj.lock
+          obj.X += (*obj.Characteristics)["speed"] * math.Cos(fire.Bearing)
+          obj.Y += (*obj.Characteristics)["speed"] * math.Sin(fire.Bearing)
+          obj.Bearing = fire.Bearing
+          obj.lock <- 1
+          game.update <- obj
 
-        // check for a collision with a player
-        collisions := obj.collisions(game, player)
+          // check for a collision with a player
+          collisions := obj.collisions(game, player)
 
-        for _, v := range collisions {
-          switch (v.ObjType) {
-          case "Player":
-            // He's dead, jim.
-            v.Respawn()
-            game.update <- v
+          for _, v := range collisions {
+            switch (v.ObjType) {
+            case "Player":
+              // He's dead, jim.
+              v.Respawn()
+              game.update <- v
+            }
           }
-        }
 
-        time.Sleep(50*time.Millisecond)
-      }
-      game.remove <- obj
-    }()
+          time.Sleep(50*time.Millisecond)
+        }
+        game.remove <- obj
+      }()
+
+      time.Sleep(100*time.Millisecond)
+    }
   default:
     log.Printf("Unknown game message: %#v\n", message)
     return
@@ -162,7 +167,7 @@ func gameServer(ws *websocket.Conn) {
     h.unregister <- c
     game.remove <- obj
   }()
-  
+
   go c.Writer()
 
   c.send <- *obj // First object is player, itself
@@ -181,7 +186,7 @@ func RegisterGameSocket() {
     for {
       message := <- chGame
 
-      processGameMessage(message)
+      go processGameMessage(message) // This needs to be in a go routine
     }
   }()
 

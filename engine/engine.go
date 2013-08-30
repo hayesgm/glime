@@ -158,7 +158,11 @@ func gameServer(ws *websocket.Conn) {
 
   c := &Connection{send: make(chan GameObject, 256), id: obj.Id, ws: ws}
   h.register <- c
-  defer func() { h.unregister <- c }()
+  defer func() {
+    h.unregister <- c
+    game.remove <- obj
+  }()
+  
   go c.Writer()
 
   c.send <- *obj // First object is player, itself

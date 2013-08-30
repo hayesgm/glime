@@ -30,6 +30,7 @@ func (h *Hub) Run() {
       h.connections[c] = true
     case c := <-h.unregister:
       delete(h.connections, c)
+      defer func() {recover()}() // Recover if close fails
       close(c.send)
     case m := <-h.broadcast:
       for c := range h.connections {

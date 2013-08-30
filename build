@@ -1,0 +1,22 @@
+in Bash
+
+./build.sh
+
+git add .
+git commit -m "..."
+
+bump in Dockerfile
+git add Dockerfile
+git commit -m "Bump to 0.0.x"
+git tag -v v0.0.x -m "Bump to 0.0.x"
+
+in Vagrant
+
+docker build -t hayesgm/glime https://raw.github.com/hayesgm/glime/master/Dockerfile && docker push hayesgm/glime
+
+in CoreOS
+
+docker pull hayesgm/glime
+docker ps
+docker kill xxx
+docker run -d hayesgm/glime

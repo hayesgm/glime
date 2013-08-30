@@ -187,7 +187,7 @@
         }
       };
 
-      var server = new WebSocket($self.data('src'),['xmpp']);
+      var server = new WebSocket("ws://" + window.location.host + $self.data('src'),['xmpp']);
       dbg(['Connecting to', $self.data('src')]);
 
       server.onmessage = function(e) {

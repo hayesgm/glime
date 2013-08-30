@@ -11,4 +11,4 @@ RUN git clone https://github.com/hayesgm/glime /srv/glime
 
 CMD cd /srv/glime && ./glime.linux
 
-EXPOSE 1111
+EXPOSE 80:1111

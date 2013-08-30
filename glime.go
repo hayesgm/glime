@@ -4,7 +4,7 @@ import (
   "net/http"
   "fmt"
   "log"
-  "glime/engine"
+  "github.com/hayesgm/glime/engine"
 )
 
 func main() {

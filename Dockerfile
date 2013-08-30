@@ -7,7 +7,7 @@ MAINTAINER Geoffrey Hayes <hayesgm@gmail.com>
 
 RUN yum install git-core -y
 
-RUN git clone https://github.com/hayesgm/glime /srv
+RUN git clone https://github.com/hayesgm/glime /srv/glime
 
 CMD cd /srv/glime && ./glime.linux
 
